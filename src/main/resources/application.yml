@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: smartcity-sensors
+  profiles:
+    active: h2
+  jpa:
+    properties:
+      hibernate.hibernate.show_sql: true
+  kafka:
+    bootstrap-servers: sc_kafka_1:29092,sc_kafka_2:29093,sc_kafka_3:29094
+    topics:
+      airquality: sensor-airquality
+    producer:
+        key:
+            serializer: org.apache.kafka.common.serialization.StringSerializer
+        value:
+            serializer: org.apache.kafka.common.serialization.KafkaAvroSerializer
+    properties:
+        schema.registry.url: http://schema-registry:8081
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    metrics:
+      access: read_only
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+kafka:
+  sensors:
+    producer-group-id: smartcity-sensors-sim

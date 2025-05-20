@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "AirQualityObserved",
+  "namespace": "pl.edu.pjwstk.s25819.smartcity.sensors.avro.model",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "type", "type": "string" },
+    { "name": "dateObserved", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    {
+      "name": "location",
+      "type": {
+        "type": "record",
+        "name": "GeoLocation",
+        "fields": [
+          { "name": "type", "type": "string" },
+          {
+            "name": "coordinates",
+            "type": {
+              "type": "array",
+              "items": "double"
+            }
+          }
+        ]
+      }
+    },
+    { "name": "pm10", "type": "double" },
+    { "name": "pm2_5", "type": "double" },
+    { "name": "temperature", "type": "double" },
+    { "name": "humidity", "type": "int" }
+  ]
+}
