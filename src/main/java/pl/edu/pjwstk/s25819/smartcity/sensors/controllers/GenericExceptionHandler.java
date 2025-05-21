@@ -1,6 +1,7 @@
 package pl.edu.pjwstk.s25819.smartcity.sensors.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -15,6 +16,9 @@ import java.util.Map;
 @RestControllerAdvice
 public class GenericExceptionHandler {
 
+    @Value("${spring.application.name}")
+    private String serviceName;
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
 
@@ -24,6 +28,7 @@ public class GenericExceptionHandler {
         }
 
         GenericErrorResponseDto errorResponse = new GenericErrorResponseDto(
+                serviceName,
                 errors.toString(),
                 "Validation Error",
                 ex.getParameter().getExecutable().toString(), // lub dodaj własny sposób
@@ -37,6 +42,7 @@ public class GenericExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GenericErrorResponseDto> handleGenericException(Exception exception, HttpServletRequest request) {
         GenericErrorResponseDto errorResponse = new GenericErrorResponseDto(
+                serviceName,
                 exception.getMessage(),
                 exception.getClass().getSimpleName(),
                 request.getRequestURI(),

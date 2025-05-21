@@ -2,13 +2,14 @@ spring:
   application:
     name: smartcity-sensors
   profiles:
-    active: h2
+    active: h2, kafka-local
   jpa:
     properties:
       hibernate.hibernate.show_sql: true
   kafka:
     bootstrap-servers: sc_kafka_1:29092,sc_kafka_2:29093,sc_kafka_3:29094
     topics:
+      replication-factor: 3
       airquality: sensor-airquality
     producer:
         key:

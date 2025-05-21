@@ -1,11 +1,8 @@
 package pl.edu.pjwstk.s25819.smartcity.sensors.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import pl.edu.pjwstk.s25819.smartcity.sensors.avro.model.AirQualityObserved;
@@ -73,7 +70,8 @@ public class SimulationServiceImpl implements SimulationService {
 
         switch (sensor.getType().toLowerCase()) {
             case "airqualitysensor" -> {
-                AirQualityObserved airQualityObserved = AirQualityObserved.newBuilder()
+
+                return AirQualityObserved.newBuilder()
                         .setId("AirQualityObserved:" + sensor.getId())
                         .setType("AirQualityObserved")
                         .setDateObserved(Instant.now())
@@ -84,8 +82,6 @@ public class SimulationServiceImpl implements SimulationService {
                         .setTemperature(15 + Math.random() * 10)
                         .setHumidity(60 + (int) (Math.random() * 30))
                         .build();
-
-                return airQualityObserved;
             }
             default -> throw new IllegalArgumentException("Nieznany typ czujnika");
         }

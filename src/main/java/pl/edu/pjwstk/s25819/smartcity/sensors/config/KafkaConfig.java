@@ -35,6 +35,9 @@ public class KafkaConfig {
     @Value("${spring.kafka.topics.airquality}")
     private String sensorAirQualityTopic;
 
+    @Value("${spring.kafka.topics.replication-factor:3}")
+    private int kafkaTopicsReplicationFactor;
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -51,7 +54,7 @@ public class KafkaConfig {
     public NewTopic airQualityTopic() {
         return TopicBuilder
                 .name(sensorAirQualityTopic)
-                .replicas(3)
+                .replicas(kafkaTopicsReplicationFactor)
                 .build();
     }
 

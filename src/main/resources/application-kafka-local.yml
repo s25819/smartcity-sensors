@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topics:
+      replication-factor: 1
+      airquality: sensor-airquality
+    producer:
+      key:
+        serializer: org.apache.kafka.common.serialization.StringSerializer
+      value:
+        serializer: org.apache.kafka.common.serialization.KafkaAvroSerializer
+    properties:
+      schema.registry.url: http://localhost:9081
