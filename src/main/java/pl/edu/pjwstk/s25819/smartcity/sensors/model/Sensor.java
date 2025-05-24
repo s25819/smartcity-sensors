@@ -13,16 +13,25 @@ import java.time.LocalDateTime;
 @Setter
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @ToString
-public abstract class Sensor<ID> {
+public abstract class Sensor {
 
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
-    private ID id;
+    private Long id;
+
+    public String getSensorId() {
+        return sensorType.getName() + "-" + id;
+    }
+
+    public Long parseId(String sensorId) {
+        return sensorId.split("-")[1].isEmpty() ? null : Long.parseLong(sensorId.split("-")[sensorId.split("-").length - 1]);
+    }
 
     @Embedded
     private Geolocation location;
 
-    protected String type;
+    @Enumerated(EnumType.STRING)
+    protected SensorType sensorType;
 
     @Enumerated(EnumType.STRING)
     private SensorStatus status;

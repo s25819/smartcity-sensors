@@ -2,14 +2,13 @@ package pl.edu.pjwstk.s25819.smartcity.sensors.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import pl.edu.pjwstk.s25819.smartcity.sensors.avro.model.AirQualityObserved;
 import pl.edu.pjwstk.s25819.smartcity.sensors.avro.model.GeoLocation;
 import pl.edu.pjwstk.s25819.smartcity.sensors.config.KafkaTopicsConfig;
-import pl.edu.pjwstk.s25819.smartcity.sensors.exceptions.SensorNotFoundException;
 import pl.edu.pjwstk.s25819.smartcity.sensors.model.Sensor;
+import pl.edu.pjwstk.s25819.smartcity.sensors.model.SensorType;
 import pl.edu.pjwstk.s25819.smartcity.sensors.repository.SensorRepository;
 import pl.edu.pjwstk.s25819.smartcity.sensors.service.SimulationService;
 
@@ -24,24 +23,21 @@ import java.util.concurrent.*;
 public class SimulationServiceImpl implements SimulationService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final Map<Integer, ScheduledFuture<?>> runningSimulations = new ConcurrentHashMap<>();
+    private final Map<Long, ScheduledFuture<?>> runningSimulations = new ConcurrentHashMap<>();
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
     private final SensorRepository sensorRepository;
 
     private final KafkaTopicsConfig kafkaTopicsConfig;
 
     @Override
-    public SimulationResponse startSimulation(int sensorId) {
-        log.info("Uruchamianie symulacji dla czujnika o id: {}", sensorId);
+    public SimulationResponse startSimulation(Sensor sensor) {
+        log.info("Uruchamianie symulacji dla czujnika: {}", sensor);
 
-        if (runningSimulations.containsKey(sensorId)) {
-            log.info("Symulacja dla czujnika o id: {} już działa", sensorId);
-            return new SimulationResponse(String.valueOf(sensorId), "running",
-                    String.format("Symulacja dla czujnika o id: %s już działa", sensorId));
+        if (runningSimulations.containsKey(sensor.getId())) {
+            log.info("Symulacja dla czujnika o id: {} już działa", sensor.getSensorId());
+            return new SimulationResponse(sensor.getSensorId(), "running",
+                    String.format("Symulacja dla czujnika o id: %s już działa", sensor.getSensorId()));
         }
-
-        var sensor = sensorRepository.findById(sensorId)
-                .orElseThrow(() -> new SensorNotFoundException("Nie znaleziono czujnika o id: " + sensorId));
 
         log.info("Uruchamianie symulacji dla czujnika : {}", sensor);
 
@@ -49,10 +45,9 @@ public class SimulationServiceImpl implements SimulationService {
 
         try {
             task = () -> {
-                var sensorType = sensor.getType().toLowerCase();
-                String topic = getTopicForSensorType(sensorType);
+                String topic = getTopicForSensorType(sensor.getSensorType());
                 Object message = generateMessage(sensor);
-                kafkaTemplate.send(topic, sensorType + "-" + sensorId, message);
+                kafkaTemplate.send(topic, sensor.getSensorId(), message);
             };
         } catch (Exception e) {
             log.error("Błąd podczas uruchamiania symulacji: {}", e.getMessage());
@@ -60,23 +55,24 @@ public class SimulationServiceImpl implements SimulationService {
         }
 
         ScheduledFuture<?> future = executor.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
-        runningSimulations.put(sensorId, future);
-        log.info("Symulacja dla czujnika o id: {} uruchomiona", sensorId);
+        runningSimulations.put(sensor.getId(), future);
+        log.info("Symulacja dla czujnika o id: {} uruchomiona", sensor.getSensorId());
 
-        return new SimulationResponse(String.valueOf(sensorId), "running", "Symulacja została uruchomiona");
+        return new SimulationResponse(sensor.getSensorId(), "running", "Symulacja została uruchomiona");
     }
 
-    private Object generateMessage(Sensor<?> sensor) {
+    private Object generateMessage(Sensor sensor) {
 
-        switch (sensor.getType().toLowerCase()) {
-            case "airqualitysensor" -> {
+        switch (sensor.getSensorType()) {
+            case AIR_QUALITY -> {
 
                 return AirQualityObserved.newBuilder()
                         .setId("AirQualityObserved:" + sensor.getId())
+                        .setSensorId("air-quality-" + sensor.getId())
                         .setType("AirQualityObserved")
+                        .setSensorId(sensor.getSensorId())
                         .setDateObserved(Instant.now())
                         .setLocation(new GeoLocation("Point", List.of(sensor.getLocation().getLatitude(), sensor.getLocation().getLongitude())))
-
                         .setPm10(Math.random() * 100)
                         .setPm25(Math.random() * 50)
                         .setTemperature(15 + Math.random() * 10)
@@ -87,21 +83,23 @@ public class SimulationServiceImpl implements SimulationService {
         }
     }
 
-    private String getTopicForSensorType(String sensorType) {
+    private String getTopicForSensorType(SensorType sensorType) {
 
-        if ("AirQualitySensor".equalsIgnoreCase(sensorType)) {
-            return kafkaTopicsConfig.getAirQualityTopic();
-        } else
-            throw new IllegalArgumentException("Nieznany typ czujnika: " + sensorType);
+        switch (sensorType) {
+            case AIR_QUALITY -> {
+                return kafkaTopicsConfig.getAirQualityTopic();
+            }
+            default -> throw new IllegalArgumentException("Nieznany typ czujnika: " + sensorType);
+        }
     }
 
     @Override
-    public SimulationResponse stopSimulation(int sensorId) {
-        ScheduledFuture<?> future = runningSimulations.remove(sensorId);
+    public SimulationResponse stopSimulation(Sensor sensor) {
+        ScheduledFuture<?> future = runningSimulations.remove(sensor.getId());
         if (future != null)
             future.cancel(true);
 
-        log.info("Symulacja dla czujnika o id: {} zatrzymana", sensorId);
-        return new SimulationResponse(String.valueOf(sensorId), "stopped", "Symulacja została zatrzymana");
+        log.info("Symulacja dla czujnika o id: {} zatrzymana", sensor.getSensorId());
+        return new SimulationResponse(sensor.getSensorId(), "stopped", "Symulacja została zatrzymana");
     }
 }

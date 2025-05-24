@@ -3,12 +3,14 @@ package pl.edu.pjwstk.s25819.smartcity.sensors.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pl.edu.pjwstk.s25819.smartcity.sensors.dto.*;
 import pl.edu.pjwstk.s25819.smartcity.sensors.dto.mappers.SensorMapper;
 import pl.edu.pjwstk.s25819.smartcity.sensors.exceptions.SensorNotFoundException;
 import pl.edu.pjwstk.s25819.smartcity.sensors.model.SensorFactory;
 import pl.edu.pjwstk.s25819.smartcity.sensors.model.SensorStatus;
+import pl.edu.pjwstk.s25819.smartcity.sensors.model.SensorType;
 import pl.edu.pjwstk.s25819.smartcity.sensors.repository.SensorRepository;
 import pl.edu.pjwstk.s25819.smartcity.sensors.service.SensorService;
 import pl.edu.pjwstk.s25819.smartcity.sensors.service.SimulationService;
@@ -19,6 +21,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class SensorServiceImpl implements SensorService {
 
     private final SensorRepository sensorRepository;
@@ -34,16 +37,20 @@ public class SensorServiceImpl implements SensorService {
 
     @Override
     public SensorResponseDto createSensor(SensorRequestDto sensorRequestDto) {
+
         var sensor = SensorFactory.createSensor(sensorRequestDto);
+
+        log.info("Zapisywanie nowego czujnika: {}", sensor);
+
         var savedSensor = sensorRepository.save(sensor);
 
         return SensorMapper.toDto(savedSensor);
     }
 
     @Override
-    public SensorResponseDto updateSensor(int id, SensorChangeStatusRequestDto sensorChangeStatusRequestDto) {
+    public SensorResponseDto updateSensor(long id, SensorChangeStatusRequestDto sensorChangeStatusRequestDto) {
         var sensor = sensorRepository
-                .findById(id)
+                .findById((int)id)
                 .orElseThrow(() -> new SensorNotFoundException(String.format("Nie znaleziono sensora o id: %s", id)));
 
         if (sensor.getStatus() == decodeStatus(sensorChangeStatusRequestDto.status())) {
@@ -55,9 +62,9 @@ public class SensorServiceImpl implements SensorService {
         var savedSensor = sensorRepository.save(sensor);
 
         if (sensor.getStatus() == SensorStatus.ACTIVE) {
-            simulationService.startSimulation(id);
+            simulationService.startSimulation(sensor);
         } else {
-            simulationService.stopSimulation(id);
+            simulationService.stopSimulation(sensor);
         }
 
         return SensorMapper.toDto(savedSensor);
@@ -69,7 +76,7 @@ public class SensorServiceImpl implements SensorService {
         var sensorTypes = new ArrayList<SensorTypeResponseDto>();
 
         var sensorType = new SensorTypeResponseDto(
-                "airquality",
+                SensorType.AIR_QUALITY.getName(),
                 "Czujnik jakości powietrza",
                 "Czujnik jakości powietrza mierzący stężenie zanieczyszczeń w powietrzu"
           );

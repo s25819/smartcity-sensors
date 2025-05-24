@@ -13,7 +13,7 @@ public interface SensorService {
 
     SensorResponseDto createSensor(SensorRequestDto sensorRequestDto);
 
-    SensorResponseDto updateSensor(int id, SensorChangeStatusRequestDto sensorChangeStatusRequestDto);
+    SensorResponseDto updateSensor(long id, SensorChangeStatusRequestDto sensorChangeStatusRequestDto);
 
     List<SensorTypeResponseDto> getSensorTypes();
 }

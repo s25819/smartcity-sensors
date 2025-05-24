@@ -6,9 +6,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pl.edu.pjwstk.s25819.smartcity.sensors.dto.*;
+import pl.edu.pjwstk.s25819.smartcity.sensors.dto.SensorChangeStatusRequestDto;
+import pl.edu.pjwstk.s25819.smartcity.sensors.dto.SensorRequestDto;
+import pl.edu.pjwstk.s25819.smartcity.sensors.dto.SensorResponseDto;
+import pl.edu.pjwstk.s25819.smartcity.sensors.dto.SensorTypeResponseDto;
 import pl.edu.pjwstk.s25819.smartcity.sensors.service.SensorService;
-import pl.edu.pjwstk.s25819.smartcity.sensors.service.SimulationService;
 
 import java.util.List;
 
@@ -21,7 +23,7 @@ public class SensorsController {
 
     private final SensorService sensorService;
 
-    @GetMapping({ ""})
+    @GetMapping({""})
     public ResponseEntity<List<SensorResponseDto>> getAllSensors(HttpServletRequest request) {
         log.info("Przyszedł request z {}", request.getRemoteAddr());
 
@@ -31,8 +33,10 @@ public class SensorsController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping({ ""})
+    @PostMapping({""})
     public ResponseEntity<SensorResponseDto> createSensor(@Valid @RequestBody SensorRequestDto sensorRequestDto) {
+        log.info("Próba dodania nowego sensora: {}", sensorRequestDto);
+
         var sensorResponseDto = sensorService.createSensor(sensorRequestDto);
 
         log.info("Zwracane dane o sensorze: {}", sensorResponseDto);
@@ -40,8 +44,8 @@ public class SensorsController {
         return ResponseEntity.ok(sensorResponseDto);
     }
 
-    @PatchMapping({"/{id}" })
-    public ResponseEntity<SensorResponseDto> updateSensor(@PathVariable int id,  @Valid @RequestBody SensorChangeStatusRequestDto sensorChangeStatusRequestDto) {
+    @PatchMapping({"/{id}"})
+    public ResponseEntity<SensorResponseDto> updateSensor(@PathVariable long id, @Valid @RequestBody SensorChangeStatusRequestDto sensorChangeStatusRequestDto) {
         var sensorResponseDto = sensorService.updateSensor(id, sensorChangeStatusRequestDto);
 
         return ResponseEntity.ok(sensorResponseDto);

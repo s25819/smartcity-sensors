@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 import pl.edu.pjwstk.s25819.smartcity.sensors.model.Sensor;
 
 @Repository
-public interface SensorRepository extends JpaRepository<Sensor<?>, Integer> {
+public interface SensorRepository extends JpaRepository<Sensor, Integer> {
 }
